@@ -408,7 +408,7 @@ describe(AssetService.name, () => {
       ]);
     });
 
-    it('should update Assets table if duplicateID field is provided', async () => {
+    it('should update Assets table if duplicateID field is provided as NULL', async () => {
       mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set(['asset-1']));
 
       await sut.updateAll(authStub.admin, {
@@ -417,7 +417,7 @@ describe(AssetService.name, () => {
         longitude: 0,
         isArchived: undefined,
         isFavorite: undefined,
-        duplicateId: "duplicateId",
+        duplicateId: NULL,
         rating: undefined,
       });
       expect(mocks.asset.updateAll).toHaveBeenCalled();
