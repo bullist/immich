@@ -417,7 +417,7 @@ describe(AssetService.name, () => {
         longitude: 0,
         isArchived: undefined,
         isFavorite: undefined,
-        duplicateId: 1,
+        duplicateId: "duplicateId",
         rating: undefined,
       });
       expect(mocks.asset.updateAll).toHaveBeenCalled();
