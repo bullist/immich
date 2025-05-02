@@ -408,6 +408,25 @@ describe(AssetService.name, () => {
       ]);
     });
 
+    it('should update Assets table if duplicateID field is provided', async () => {
+      mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set(['asset-1']));
+
+      await sut.updateAll(authStub.admin, {
+        ids: ['asset-1'],
+        latitude: 0,
+        longitude: 0,
+        isArchived: undefined,
+        isFavorite: undefined,
+        duplicateId: 1,
+        rating: undefined,
+      });
+      expect(mocks.asset.updateAll).toHaveBeenCalled();
+      expect(mocks.asset.updateAllExif).toHaveBeenCalledWith(['asset-1'], { latitude: 0, longitude: 0 });
+      expect(mocks.job.queueAll).toHaveBeenCalledWith([
+        { name: JobName.SIDECAR_WRITE, data: { id: 'asset-1', latitude: 0, longitude: 0 } },
+      ]);
+    });
+
     it('should update exif table if latitude field is provided', async () => {
       mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set(['asset-1']));
       const dateTimeOriginal = new Date().toISOString();
