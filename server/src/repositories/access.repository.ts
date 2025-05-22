@@ -3,7 +3,7 @@ import { Kysely, sql } from 'kysely';
 import { InjectKysely } from 'nestjs-kysely';
 import { DB } from 'src/db';
 import { ChunkedSet, DummyValue, GenerateSql } from 'src/decorators';
-import { AlbumUserRole } from 'src/enum';
+import { AlbumUserRole, Permission } from 'src/enum';
 import { asUuid } from 'src/utils/database';
 
 class ActivityAccess {
@@ -128,14 +128,14 @@ class AlbumAccess {
 class AssetAccess {
   constructor(private db: Kysely<DB>) {}
 
-  @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET] })
+  @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET, Permission.ASSET_READ] })
   @ChunkedSet({ paramIndex: 1 })
-  async checkAlbumAccess(userId: string, assetIds: Set<string>) {
+  async checkAlbumAccess(userId: string, assetIds: Set<string>, permission: Permission) {
     if (assetIds.size === 0) {
       return new Set<string>();
     }
 
-    return this.db
+    let query = this.db
       .selectFrom('albums')
       .innerJoin('albums_assets_assets as albumAssets', 'albums.id', 'albumAssets.albumsId')
       .innerJoin('assets', (join) =>
@@ -149,10 +149,20 @@ class AssetAccess {
         '&&',
         sql`array[${sql.join([...assetIds])}]::uuid[] `,
       )
-      .where((eb) => eb.or([eb('albums.ownerId', '=', userId), eb('users.id', '=', userId)]))
-      .where('albums.deletedAt', 'is', null)
-      .execute()
-      .then((assets) => {
+      .where('albums.deletedAt', 'is', null);
+
+    if (permission === Permission.ASSET_UPDATE || permission === Permission.ASSET_DELETE) {
+      query = query.where((eb) =>
+        eb.or([
+          eb('albums.ownerId', '=', userId),
+          eb.and([eb('users.id', '=', userId), eb('albumUsers.role', '=', AlbumUserRole.EDITOR)]),
+        ]),
+      );
+    } else {
+      query = query.where((eb) => eb.or([eb('albums.ownerId', '=', userId), eb('users.id', '=', userId)]));
+    }
+
+    return query.execute().then((assets) => {
         const allowedIds = new Set<string>();
         for (const asset of assets) {
           if (asset.id && assetIds.has(asset.id)) {

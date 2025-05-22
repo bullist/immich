@@ -120,7 +120,7 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
 
     case Permission.ASSET_READ: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids);
-      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
+      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner), permission);
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
       return setUnion(isOwner, isAlbum, isPartner);
     }
@@ -133,24 +133,28 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
 
     case Permission.ASSET_VIEW: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids);
-      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
+      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner), permission);
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
       return setUnion(isOwner, isAlbum, isPartner);
     }
 
     case Permission.ASSET_DOWNLOAD: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids);
-      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
+      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner), permission);
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
       return setUnion(isOwner, isAlbum, isPartner);
     }
 
     case Permission.ASSET_UPDATE: {
-      return await access.asset.checkOwnerAccess(auth.user.id, ids);
+      const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids);
+      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner), permission);
+      return setUnion(isOwner, isAlbum);
     }
 
     case Permission.ASSET_DELETE: {
-      return await access.asset.checkOwnerAccess(auth.user.id, ids);
+      const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids);
+      const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner), permission);
+      return setUnion(isOwner, isAlbum);
     }
 
     case Permission.ALBUM_READ: {
